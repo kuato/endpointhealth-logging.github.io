@@ -1,7 +1,7 @@
 const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
-const { initDb, insertAuditEvent } = require("./db"); // ← Import DB functions
+const { initDb, insertAuditEvent, getAuditReport } = require("./db"); // ← Added getAuditReport
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -43,12 +43,28 @@ app.post("/log", async (req, res) => {
   console.log(`🌐 Source: ${source}`);
 
   try {
-    // Pass the full JSON in fullEvent for DB storage
     await insertAuditEvent({ timestamp, action, outcome, agent, patient, source, fullEvent: body });
     res.status(200).send("AuditEvent logged and saved");
   } catch (err) {
     console.error("❌ Failed to save to DB:", err);
     res.status(500).send("Failed to save AuditEvent");
+  }
+});
+
+// GET /report - summary of audit events by agent (optional ?since=YYYY-MM-DD)
+app.get("/report", async (req, res) => {
+  try {
+    const key = req.headers["x-api-key"];
+    if (!key || key !== process.env.REPORT_API_KEY) {
+      return res.status(403).send("Forbidden");
+    }
+
+    const since = req.query.since;
+    const report = await getAuditReport(since);
+    res.json(report);
+  } catch (err) {
+    console.error("❌ Error fetching report:", err);
+    res.status(500).send("Failed to generate report");
   }
 });
 
