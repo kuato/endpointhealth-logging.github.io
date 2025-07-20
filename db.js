@@ -1,12 +1,15 @@
 const { Pool } = require("pg");
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL, // from Render
+  connectionString: process.env.DATABASE_URL, // Set this to Render's internal DB URL
   ssl: {
     rejectUnauthorized: false,
   },
 });
 
+/**
+ * Initialize the database by creating the audit_events table if it doesn't exist.
+ */
 async function initDb() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS audit_events (
@@ -22,6 +25,17 @@ async function initDb() {
   `);
 }
 
+/**
+ * Insert a new AuditEvent record into the database.
+ * @param {object} auditEventData
+ * @param {string} auditEventData.timestamp - ISO timestamp of the event
+ * @param {string} auditEventData.action - Action code
+ * @param {string} auditEventData.outcome - Outcome code
+ * @param {string} auditEventData.agent - Agent display/name
+ * @param {string} auditEventData.patient - Patient reference
+ * @param {string} auditEventData.source - Source reference
+ * @param {object} auditEventData.fullEvent - Full original AuditEvent JSON
+ */
 async function insertAuditEvent({ timestamp, action, outcome, agent, patient, source, fullEvent }) {
   await pool.query(
     `INSERT INTO audit_events (timestamp, action, outcome, agent, patient, source, full_event)
@@ -31,8 +45,9 @@ async function insertAuditEvent({ timestamp, action, outcome, agent, patient, so
 }
 
 /**
- * Get report summary grouped by agent with optional date filter.
- * @param {string} since - ISO date string (e.g., "2025-07-01")
+ * Retrieve a report summary grouped by agent, optionally filtered by a start date.
+ * @param {string} since - Optional ISO date string filter (e.g., "2025-07-01")
+ * @returns {Promise<Array<{ agent: string, access_count: number, last_access: string }>>}
  */
 async function getAuditReport(since) {
   let query = `
