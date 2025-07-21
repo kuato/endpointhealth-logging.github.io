@@ -32,7 +32,7 @@ app.post("/log", async (req, res) => {
   const outcome = body.outcome || "Unknown";
   //const agent = body.agent?.[0]?.who?.display || "Unknown";
   const agent = body.agent?.[0]?.who?.reference || "Unknown";
-  
+
   const patient = body.entity?.find(e => e.what?.reference?.startsWith("Patient/"))?.what?.reference || "N/A";
   const source = body.source?.observer?.reference || "Unknown";
 
