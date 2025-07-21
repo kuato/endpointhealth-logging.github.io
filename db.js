@@ -77,14 +77,21 @@ async function getAuditReport(since) {
  * @param {string} to - End date (ISO format, e.g., "2025-07-15")
  * @returns {Promise<Array<{ provider: string, message_count: number }>>}
  */
+/**
+ * Retrieve message count grouped by provider and source, between two dates.
+ * @param {string} from - Start date (ISO format)
+ * @param {string} to - End date (ISO format)
+ * @returns {Promise<Array<{ provider: string, source: string, message_count: number }>>}
+ */
 async function getMessageCountByProviderBetweenDates(from, to) {
   const query = `
     SELECT 
       agent AS provider,
+      source,
       COUNT(*) AS message_count
     FROM audit_events
     WHERE timestamp >= $1 AND timestamp < $2
-    GROUP BY agent
+    GROUP BY agent, source
     ORDER BY message_count DESC
   `;
   const values = [from, to];
