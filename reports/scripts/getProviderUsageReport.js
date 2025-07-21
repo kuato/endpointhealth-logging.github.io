@@ -3,25 +3,25 @@ const ExcelJS = require("exceljs");
 const path = require("path");
 const fs = require("fs");
 
-// Read date parameters from command-line arguments
-const [from, to] = process.argv.slice(2);
+// Read date range and API key from command-line arguments
+const [from, to, apiKey] = process.argv.slice(2);
 
-if (!from || !to) {
-  console.error("❗ Please provide both start and end dates in format: YYYY-MM-DD YYYY-MM-DD");
-  console.error("Usage: node generateUsageReport.js 2025-07-01 2025-07-21");
+if (!from || !to || !apiKey) {
+  console.error("❗ Please provide start date, end date, and API key.");
+  console.error("Usage: node generateUsageReport.js YYYY-MM-DD YYYY-MM-DD your-api-key");
   process.exit(1);
 }
 
 /**
  * Generate a usage report in Excel format for the given date range.
  */
-async function generateUsageReport(from, to) {
+async function generateUsageReport(from, to, apiKey) {
   const url = `https://endpointhealth-logging-github-io.onrender.com/report/by-provider?from=${from}&to=${to}`;
 
   try {
     const { data } = await axios.get(url, {
       headers: {
-        "x-api-key": "5657175624",
+        "x-api-key": apiKey,
         "User-Agent": "PostmanRuntime/7.32.2",
         "Accept": "application/json"
       }
@@ -65,7 +65,7 @@ async function generateUsageReport(from, to) {
       message_count: uniqueProviders.size
     });
 
-    // Define the output directory one level up: ../results
+    // Save to ../results
     const outputDir = path.resolve(__dirname, "../results");
     fs.mkdirSync(outputDir, { recursive: true });
 
@@ -79,4 +79,4 @@ async function generateUsageReport(from, to) {
   }
 }
 
-generateUsageReport(from, to);
+generateUsageReport(from, to, apiKey);
