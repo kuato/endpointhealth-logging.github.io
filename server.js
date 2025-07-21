@@ -1,7 +1,7 @@
 const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
-const { initDb, insertAuditEvent, getAuditReport } = require("./db"); // ← Added getAuditReport
+const { initDb, insertAuditEvent, getAuditReport, getMessageCountByProviderBetweenDates } = require("./db"); // ← Added getAuditReport
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -69,6 +69,28 @@ app.get("/report", async (req, res) => {
     res.status(500).send("Failed to generate report");
   }
 });
+
+// GET /report/by-provider?from=YYYY-MM-DD&to=YYYY-MM-DD
+app.get("/report/by-provider", async (req, res) => {
+  try {
+    const key = req.headers["x-api-key"];
+    if (!key || key !== process.env.REPORT_API_KEY) {
+      return res.status(403).send("Forbidden");
+    }
+
+    const { from, to } = req.query;
+    if (!from || !to) {
+      return res.status(400).send("Missing required query parameters: from and to");
+    }
+
+    const report = await getMessageCountByProviderBetweenDates(from, to);
+    res.json(report);
+  } catch (err) {
+    console.error("❌ Error fetching provider report:", err);
+    res.status(500).send("Failed to generate provider report");
+  }
+});
+
 
 // GET / - health check
 app.get("/", (req, res) => {

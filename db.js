@@ -70,4 +70,27 @@ async function getAuditReport(since) {
   return rows;
 }
 
-module.exports = { initDb, insertAuditEvent, getAuditReport };
+
+/**
+ * Retrieve message count grouped by provider, filtered between two dates.
+ * @param {string} from - Start date (ISO format, e.g., "2025-07-01")
+ * @param {string} to - End date (ISO format, e.g., "2025-07-15")
+ * @returns {Promise<Array<{ provider: string, message_count: number }>>}
+ */
+async function getMessageCountByProviderBetweenDates(from, to) {
+  const query = `
+    SELECT 
+      agent AS provider,
+      COUNT(*) AS message_count
+    FROM audit_events
+    WHERE timestamp >= $1 AND timestamp < $2
+    GROUP BY agent
+    ORDER BY message_count DESC
+  `;
+  const values = [from, to];
+
+  const { rows } = await pool.query(query, values);
+  return rows;
+}
+
+module.exports = { initDb, insertAuditEvent, getAuditReport, getMessageCountByProviderBetweenDates };
