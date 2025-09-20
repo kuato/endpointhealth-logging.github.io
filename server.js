@@ -1,7 +1,7 @@
 const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
-const { initDb, insertAuditEvent, getAuditReport, getMessageCountByProviderBetweenDates } = require("./db"); // ← Added getAuditReport
+const { initDb, insertAuditEvent } = require("./db");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -27,70 +27,15 @@ app.post("/log", async (req, res) => {
     return res.status(400).send("Invalid resource: must be an AuditEvent");
   }
 
-  const timestamp = body.recorded || new Date().toISOString();
-  const action = body.action || "Unknown";
-  const outcome = body.outcome || "Unknown";
-  //const agent = body.agent?.[0]?.who?.display || "Unknown";
-  const agent = body.agent?.[0]?.who?.reference || "Unknown";
-
-  const patient = body.entity?.find(e => e.what?.reference?.startsWith("Patient/"))?.what?.reference || "N/A";
-  const source = body.source?.observer?.reference || "Unknown";
-
-  console.log("📥 Received AuditEvent:");
-  console.log(`🕒 Timestamp: ${timestamp}`);
-  console.log(`⚙️  Action: ${action}`);
-  console.log(`✅ Outcome: ${outcome}`);
-  console.log(`👤 Agent: ${agent}`);
-  console.log(`🏥 Patient: ${patient}`);
-  console.log(`🌐 Source: ${source}`);
-
   try {
-    await insertAuditEvent({ timestamp, action, outcome, agent, patient, source, fullEvent: body });
-    res.status(200).send("AuditEvent logged and saved");
+    await insertAuditEvent(body);
+    console.log("📥 AuditEvent logged:", body.id || "(no ID)");
+    res.status(200).send("AuditEvent saved");
   } catch (err) {
-    console.error("❌ Failed to save to DB:", err);
-    res.status(500).send("Failed to save AuditEvent");
+    console.error("❌ Failed to save AuditEvent:", err);
+    res.status(500).send("Database error");
   }
 });
-
-// GET /report - summary of audit events by agent (optional ?since=YYYY-MM-DD)
-app.get("/report", async (req, res) => {
-  try {
-    const key = req.headers["x-api-key"];
-    if (!key || key !== process.env.REPORT_API_KEY) {
-      return res.status(403).send("Forbidden");
-    }
-
-    const since = req.query.since;
-    const report = await getAuditReport(since);
-    res.json(report);
-  } catch (err) {
-    console.error("❌ Error fetching report:", err);
-    res.status(500).send("Failed to generate report");
-  }
-});
-
-// GET /report/by-provider?from=YYYY-MM-DD&to=YYYY-MM-DD
-app.get("/report/by-provider", async (req, res) => {
-  try {
-    const key = req.headers["x-api-key"];
-    if (!key || key !== process.env.REPORT_API_KEY) {
-      return res.status(403).send("Forbidden");
-    }
-
-    const { from, to } = req.query;
-    if (!from || !to) {
-      return res.status(400).send("Missing required query parameters: from and to");
-    }
-
-    const report = await getMessageCountByProviderBetweenDates(from, to);
-    res.json(report);
-  } catch (err) {
-    console.error("❌ Error fetching provider report:", err);
-    res.status(500).send("Failed to generate provider report");
-  }
-});
-
 
 // GET / - health check
 app.get("/", (req, res) => {
