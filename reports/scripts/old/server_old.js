@@ -1,7 +1,7 @@
 const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
-const { initDb, insertAuditEvent, getAuditReport, getMessageCountByProviderBetweenDates } = require("./db"); // ← Added getAuditReport
+const { initDb, insertAuditEvent, getAuditReport, getMessageCountByProviderBetweenDates } = require("./db_old"); // ← Added getAuditReport
 
 const app = express();
 const PORT = process.env.PORT || 3000;
