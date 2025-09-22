@@ -30,6 +30,7 @@ app.use(cors({
       callback(new Error('Not allowed by CORS'));
     }
   },
+  credentials: true,
   methods: ['POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type'],
 }));
@@ -41,6 +42,7 @@ app.options('*', (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', origin || '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
     console.log("✅ Preflight passed for:", origin);
     res.sendStatus(204);
   } else {
