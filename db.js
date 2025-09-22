@@ -14,6 +14,10 @@ const ENV = VALID_ENVS.includes(process.env.ENV) ? process.env.ENV : "dev";
 const SCHEMA = `audit_${ENV}`;
 const TABLE = `${SCHEMA}.events`;
 
+console.log(`🔌 Using schema: ${SCHEMA}`);
+console.log(`🔌 Using table: ${TABLE}`);
+console.log(`🔌 Using ENV: ${ENV}`);
+
 /**
  * Initialize the database by creating the schema and events table if they don't exist.
  */
