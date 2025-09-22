@@ -38,6 +38,7 @@ app.use(cors({
 
 // ✅ Explicit OPTIONS handler for /log to prevent 404
 app.options('/log', (req, res) => {
+  console.log("🔍 Preflight request for /log from origin:", req.headers.origin);
   const origin = req.headers.origin;
   if (!origin || allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin || '*');
@@ -58,8 +59,8 @@ app.use(morgan("combined"));
 
 // 📥 POST /log
 app.post("/log", async (req, res) => {
+  console.log("📥 /log POST received from origin:", req.headers.origin);
   const body = req.body;
-
   if (body?.resourceType !== "AuditEvent") {
     console.warn("⚠️ Invalid AuditEvent received");
     return res.status(400).send("Invalid resource: must be an AuditEvent");
