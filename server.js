@@ -4,7 +4,7 @@ const cors = require("cors");
 const { initDb, insertAuditEvent } = require("./db");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT; // ✅ Required for Render routing
 
 // 🔍 Log incoming Origin headers for debugging
 app.use((req, res, next) => {
@@ -55,15 +55,6 @@ app.options('/log', (req, res) => {
 // 🔧 Middleware
 app.use(express.json());
 app.use(morgan("combined"));
-
-// 🛠️ DB init
-initDb()
-  .then(() => {
-    console.log("✅ Database initialized");
-  })
-  .catch(err => {
-    console.error("❌ Failed to initialize DB:", err);
-  });
 
 // 📥 POST /log
 app.post("/log", async (req, res) => {
