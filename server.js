@@ -69,7 +69,7 @@ app.post("/log", async (req, res) => {
 // 🩺 GET / - health check
 app.get("/", (req, res) => {
   console.log("💡 Health check hit");
-  res.send("FHIR AuditEvent logging server is up and running!");
+  res.send("FHIR AuditEvent logging server is up and running!!!");
 });
 
 // 🚀 Start server
