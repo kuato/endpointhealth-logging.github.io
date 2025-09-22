@@ -4,6 +4,8 @@ const cors = require("cors");
 const { initDb, insertAuditEvent } = require("./db");
 
 const app = express();
+app.options('*', cors());
+
 const PORT = process.env.PORT; // ✅ Required for Render routing
 
 // 🔍 Log incoming Origin headers for debugging
@@ -50,18 +52,15 @@ const corsOptions = {
 };
 
 
-app.options('*', (req, res) => {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    res.sendStatus(200);
-});
+app.options('*', cors());
 
 // 🔧 Middleware
 app.use(cors(corsOptions));
 
 app.use(express.json());
 app.use(morgan("combined"));
+
+app.options('*', cors());
 
 // 📥 POST /log
 app.post("/log", async (req, res) => {
