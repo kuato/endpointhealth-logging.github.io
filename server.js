@@ -20,21 +20,9 @@ const allowedOrigins = [
 ];
 
 // ✅ CORS middleware — reject silently instead of throwing
-app.use(cors({
-  origin: function (origin, callback) {
-    console.log("🔍 CORS check for origin:", origin);
-    if (!origin || allowedOrigins.includes(origin)) {
-      console.log("✅ Origin allowed:", origin);
-      callback(null, true);
-    } else {
-      console.warn("❌ Origin blocked by CORS:", origin);
-      callback(null, false); // ✅ Don't throw — let Express continue
-    }
-  },
-  credentials: true,
-  methods: ['POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type'],
-}));
+
+
+
 
 // ✅ Explicit OPTIONS handler for /log to prevent 404
  /* app.options('/log', (req, res) => {
@@ -53,6 +41,11 @@ app.use(cors({
   }
 });
 */
+
+app.use(cors({
+        origin: "https://uat.endpointhealth.ca"
+    }
+))
 
 app.options('*', cors());
 
@@ -81,7 +74,7 @@ app.post("/log", async (req, res) => {
 
 // 🩺 Health check
 app.get("/", (req, res) => {
-  res.send("FHIR AuditEvent logging server is up and running!");
+  res.send("FHIR AuditEvent logging server is up and running!!");
 });
 
 // 🚀 Start server
