@@ -1,11 +1,20 @@
+// PROD
 const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
+const { initDb, insertAuditEvent } = require("./db");
 
 const app = express();
 const PORT = process.env.PORT;
 
-// 🐛 Log every incoming request
+// 🔒 Whitelisted frontend domains
+const allowedOrigins = [
+  "https://uat.endpointhealth.ca",
+  "https://dev.endpointhealth.ca",
+  "https://launch.endpointhealth.ca"
+];
+
+// 🐛 Debug incoming requests
 app.use((req, res, next) => {
   console.log(`➡️ ${req.method} ${req.originalUrl}`);
   console.log("🔍 Origin:", req.headers.origin);
@@ -13,51 +22,75 @@ app.use((req, res, next) => {
   next();
 });
 
-// 🌍 Allow everything for debugging
+// 🌍 CORS setup with strict origin filtering
 app.use(cors({
-  origin: (origin, callback) => {
+  origin: function (origin, callback) {
     console.log("🌐 CORS origin received:", origin);
-    callback(null, origin); // Reflect origin
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn("🚫 CORS blocked for origin:", origin);
+      callback(new Error("Not allowed by CORS"));
+    }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// 🔧 Middleware
 app.use(express.json());
 app.use(morgan("combined"));
 
-// ✅ Catch-all OPTIONS handler
-app.options('*', (req, res) => {
-  console.log("🛫 Handling OPTIONS preflight");
-  console.log("🔍 Origin:", req.headers.origin);
-  console.log("🔍 Access-Control-Request-Method:", req.headers['access-control-request-method']);
-  console.log("🔍 Access-Control-Request-Headers:", req.headers['access-control-request-headers']);
+// 🛫 Catch-all OPTIONS handler for preflight
+app.options("*", (req, res) => {
+  const origin = req.headers.origin;
+  console.log("🛫 Handling OPTIONS preflight for:", origin);
 
-  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-
-  console.log("✅ Responding with 204 No Content");
-  res.sendStatus(204);
+  if (!origin || allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin || "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.sendStatus(204);
+  } else {
+    console.warn("🚫 OPTIONS blocked for origin:", origin);
+    res.sendStatus(403);
+  }
 });
 
-// 📥 POST /log
+// 🛠️ Initialize DB at startup
+initDb()
+  .then(() => {
+    console.log("✅ Database initialized");
+  })
+  .catch(err => {
+    console.error("❌ Failed to initialize DB:", err);
+  });
+
+// 📥 POST /log - expects a FHIR AuditEvent JSON
 app.post("/log", async (req, res) => {
-  console.log("📥 Received POST /log");
-  console.log("🔍 Body:", req.body);
-  res.status(200).send("Log received");
+  const body = req.body;
+
+  if (body?.resourceType !== "AuditEvent") {
+    console.warn("⚠️ Invalid resource:", body);
+    return res.status(400).send("Invalid resource: must be an AuditEvent");
+  }
+
+  try {
+    await insertAuditEvent(body);
+    console.log("📥 AuditEvent logged:", body.id || "(no ID)");
+    res.status(200).send("AuditEvent saved");
+  } catch (err) {
+    console.error("❌ Failed to save AuditEvent:", err);
+    res.status(500).send("Database error");
+  }
 });
 
-// 🩺 Health check
+// 🩺 GET / - health check
 app.get("/", (req, res) => {
   console.log("💡 Health check hit");
-  res.send("Audit logger is up and wide open for debugging!");
+  res.send("FHIR AuditEvent logging server is up and running!");
 });
 
 // 🚀 Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Server listening on port ${PORT}`);
+  console.log(`🚀 AuditEvent log server listening on port ${PORT}`);
 });
