@@ -12,13 +12,14 @@ app.use((req, res, next) => {
   next();
 });
 
-// ✅ CORS setup
+// ✅ Allowed origins
 const allowedOrigins = [
   'https://uat.endpointhealth.ca',
   'https://dev.endpointhealth.ca',
   'https://launch.endpointhealth.ca',
 ];
 
+// ✅ CORS middleware — reject silently instead of throwing
 app.use(cors({
   origin: function (origin, callback) {
     console.log("🔍 CORS check for origin:", origin);
@@ -27,7 +28,7 @@ app.use(cors({
       callback(null, true);
     } else {
       console.warn("❌ Origin blocked by CORS:", origin);
-      callback(new Error('Not allowed by CORS'));
+      callback(null, false); // ✅ Don't throw — just reject silently
     }
   },
   credentials: true,
