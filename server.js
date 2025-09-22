@@ -42,14 +42,24 @@ const allowedOrigins = [
 });
 */
 
-app.use(cors({
-        origin: "https://uat.endpointhealth.ca"
-    }
-))
 
-app.options('*', cors());
+const corsOptions = {
+    origin: 'https://uat.endpointhealth.ca', // Allow only this domain
+    methods: 'GET,POST', // Allow only specific HTTP methods
+    allowedHeaders: 'Content-Type,Authorization' // Allow specific headers
+};
+
+
+app.options('*', (req, res) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.sendStatus(200);
+});
 
 // 🔧 Middleware
+app.use(cors(corsOptions));
+
 app.use(express.json());
 app.use(morgan("combined"));
 
