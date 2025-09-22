@@ -28,7 +28,7 @@ app.use(cors({
       callback(null, true);
     } else {
       console.warn("❌ Origin blocked by CORS:", origin);
-      callback(null, false); // ✅ Don't throw — just reject silently
+      callback(null, false); // ✅ Don't throw — let Express continue
     }
   },
   credentials: true,
@@ -36,8 +36,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type'],
 }));
 
-// ✅ Catch-all OPTIONS handler for preflight
-app.options('*', (req, res) => {
+// ✅ Explicit OPTIONS handler for /log to prevent 404
+app.options('/log', (req, res) => {
   const origin = req.headers.origin;
   if (!origin || allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin || '*');
