@@ -6,11 +6,54 @@ const { initDb, insertAuditEvent } = require("./db");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// 🔍 Log incoming Origin headers for debugging
+app.use((req, res, next) => {
+  console.log("🔍 Incoming Origin:", req.headers.origin);
+  next();
+});
+
+// ✅ CORS setup
+const allowedOrigins = [
+  'https://uat.endpointhealth.ca',
+  'https://dev.endpointhealth.ca',
+  'https://launch.endpointhealth.ca',
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    console.log("🔍 CORS check for origin:", origin);
+    if (!origin || allowedOrigins.includes(origin)) {
+      console.log("✅ Origin allowed:", origin);
+      callback(null, true);
+    } else {
+      console.warn("❌ Origin blocked by CORS:", origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type'],
+}));
+
+// ✅ Explicit OPTIONS handler for preflight
+app.options('/log', (req, res) => {
+  const origin = req.headers.origin;
+  if (!origin || allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    console.log("✅ Preflight passed for:", origin);
+    res.sendStatus(204);
+  } else {
+    console.warn("❌ Preflight blocked for origin:", origin);
+    res.sendStatus(403);
+  }
+});
+
+// 🔧 Middleware
 app.use(express.json());
 app.use(morgan("combined"));
 
-// Initialize DB at startup
+// 🛠️ DB init
 initDb()
   .then(() => {
     console.log("✅ Database initialized");
@@ -19,11 +62,12 @@ initDb()
     console.error("❌ Failed to initialize DB:", err);
   });
 
-// POST /log - expects a FHIR AuditEvent JSON
+// 📥 POST /log
 app.post("/log", async (req, res) => {
   const body = req.body;
 
   if (body?.resourceType !== "AuditEvent") {
+    console.warn("⚠️ Invalid AuditEvent received");
     return res.status(400).send("Invalid resource: must be an AuditEvent");
   }
 
@@ -37,11 +81,12 @@ app.post("/log", async (req, res) => {
   }
 });
 
-// GET / - health check
+// 🩺 Health check
 app.get("/", (req, res) => {
   res.send("FHIR AuditEvent logging server is up and running!");
 });
 
+// 🚀 Start server
 app.listen(PORT, () => {
   console.log(`🚀 AuditEvent log server listening on port ${PORT}`);
 });
