@@ -34,11 +34,11 @@ app.use(cors({
   allowedHeaders: ['Content-Type'],
 }));
 
-// ✅ Explicit OPTIONS handler for preflight
-app.options('/log', (req, res) => {
+// ✅ Catch-all OPTIONS handler for preflight
+app.options('*', (req, res) => {
   const origin = req.headers.origin;
   if (!origin || allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     console.log("✅ Preflight passed for:", origin);
