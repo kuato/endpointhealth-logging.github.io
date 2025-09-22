@@ -37,7 +37,7 @@ app.use(cors({
 }));
 
 // ✅ Explicit OPTIONS handler for /log to prevent 404
-app.options('/log', (req, res) => {
+ /* app.options('/log', (req, res) => {
   console.log("🔍 Preflight request for /log from origin:", req.headers.origin);
   const origin = req.headers.origin;
   if (!origin || allowedOrigins.includes(origin)) {
@@ -52,6 +52,9 @@ app.options('/log', (req, res) => {
     res.sendStatus(403);
   }
 });
+*/
+
+app.options('*', cors());
 
 // 🔧 Middleware
 app.use(express.json());
